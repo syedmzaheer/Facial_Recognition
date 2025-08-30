@@ -16,4 +16,45 @@ for gpu in gpus:
     tf.config.experimental.set_memory_growth(gpu, True)
 
 #Setup paths
-POS_PATH = os.path.join
+POS_PATH = os.path.join('data', 'positive')
+NEG_PATH = os.path.join('data', 'negative')
+ANC_PATH = os.path.join('data', 'anchor')
+
+#Make thedirectories
+os.makedirs(POS_PATH)
+os.makedirs(NEG_PATH)
+os.makedirs(ANC_PATH)
+
+#https://vis-www.cs.umass.edu/lfw/
+
+#Uncompress Tar GZ Labbled Faces in the Wild Dataset
+!tar -xf lfw.tgz
+
+#Move LFW Images to the following repository data/negetive
+for directory in os.listdir('lfw'):
+    for file in os.listdir(os.path.join('lfw', directory)):
+        EX_PATH = os.path.join('lfw', directory, file)
+        NEW_PATH = os.path.join(NEG_PATH, file)
+        os.replace(EX_PATH, NEW_PATH)
+
+#Import uuid library to generate unique image names
+import uuid
+
+os.pathj.join(ANC_PATH, '{}.jpg'.format(uuid.uuid1()))
+
+#Establish a connection to the webcam
+cap = cv2.VideoCapture(4)
+while cap.isOpened():
+    ret, frame = cap.read()
+    
+    #Cut down fram to 250x250px
+    frame = frame[120:120+250, 200:200+250, :]
+
+    #Collect anchors
+    if cv2.waitKey(1) & 0xFF == ord('a'):
+        imgname = os.path.join(ANC_PATH, '{}.jpg'.format(uuid.uuid1()))
+        #Write out anchor image
+        cv2.imwrite(imgname, frame)
+
+    #Collect positives
+    if cv2.waitKey(1) & 0xFF == ord('p'):
