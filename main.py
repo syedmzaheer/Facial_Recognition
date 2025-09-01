@@ -88,3 +88,56 @@ def data_aug(img):
         
         data.append(img)
     return data
+
+img_path = os.path.join(ANC_PATH, '924e839c-135f-11ec-b54e-a0cec8d2d278.jpg')
+img = cv2.imread(img_path)
+augmented_images = data_aug(img)
+
+for image in augmented_images:
+    cv2.imwrite(os.path.join(ANC_PATH, '{}.jpg'.format(uuid.uuid1())), image.numpy())
+
+
+for file_name in os.listdir(os.path.join(POS_PATH)):
+    img_path = os.path.join(POS_PATH, file_name)
+    img = cv2.imread(img_path)
+    augmented_images = data_aug(img) 
+    
+    for image in augmented_images:
+        cv2.imwrite(os.path.join(POS_PATH, '{}.jpg'.format(uuid.uuid1())), image.numpy())
+
+anchor = tf.data.Dataset.list_files(ANC_PATH+'\*.jpg').take(3000)
+positive = tf.data.Dataset.list_files(POS_PATH+'\*.jpg').take(3000)
+negative = tf.data.Dataset.list_files(NEG_PATH+'\*.jpg').take(3000)
+
+dir_test = anchor.as_numpy_iterator()
+
+print(dir_test.next())
+
+def preprocess(file_path):
+    
+    # Read in image from file path
+    byte_img = tf.io.read_file(file_path)
+    # Load in the image 
+    img = tf.io.decode_jpeg(byte_img)
+    
+    # Preprocessing steps - resizing the image to be 100x100x3
+    img = tf.image.resize(img, (100,100))
+    # Scale image to be between 0 and 1 
+    img = img / 255.0
+
+    # Return image
+    return img
+
+img = preprocess('data\\anchor\\a4e73462-135f-11ec-9e6e-a0cec8d2d278.jpg')
+
+
+img.numpy().max() 
+
+dataset.map(preprocess)
+
+# (anchor, positive) => 1,1,1,1,1
+# (anchor, negative) => 0,0,0,0,0
+
+positives = tf.data.Dataset.zip((anchor, positive, tf.data.Dataset.from_tensor_slices(tf.ones(len(anchor)))))
+negatives = tf.data.Dataset.zip((anchor, negative, tf.data.Dataset.from_tensor_slices(tf.zeros(len(anchor)))))
+data = positives.concatenate(negatives)
